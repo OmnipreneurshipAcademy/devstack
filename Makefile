@@ -266,7 +266,7 @@ dev.drop-db.%: ## Irreversably drop the contents of a MySQL database.
 dev.up: dev.up.$(DEFAULT_SERVICES) ## Bring up default services.
 
 dev.up.%: dev.check-memory ## Bring up services and their dependencies.
-	docker-compose up -d $$(echo $* | tr + " ")
+	docker-compose up $$(echo $* | tr + " ")
 ifeq ($(ALWAYS_CACHE_PROGRAMS),true)
 	make dev.cache-programs
 endif
