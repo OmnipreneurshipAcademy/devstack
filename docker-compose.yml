@@ -125,8 +125,8 @@ services:
       default:
         aliases:
           - edx.devstack.mysql
-    # ports:
-    #   - "3506:3306"
+    ports:
+      - "19000:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -503,7 +503,7 @@ services:
           - edx.devstack.course-authoring
     ports:
       - "2001:2001"
-    depends_on: 
+    depends_on:
       - studio
 
   frontend-app-library-authoring:
