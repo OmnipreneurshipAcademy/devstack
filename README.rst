@@ -43,6 +43,8 @@ Table of Contents
 * `Using the Latest Images`_
 * `Getting Started`_
 * `Usernames and Passwords`_
+* `Enable ADG theme`_
+* `Transifex Translations`_
 * `Service List`_
 * `Useful Commands`_
 * `Troubleshooting: General Tips`_
@@ -289,6 +291,82 @@ is ``edx``.
      - A student account that you can use to access the LMS for testing honor
        code certificates.
 
+Enable ADG theme
+----------------
+First of all, clone adg theme to ``edx-platform/themes`` folder.
+Open django admin, go to ``site-theme`` and add the following credentials and save it.
+
+.. code:: sh
+
+    site: localhost:18000
+    Theme dir name: adg
+
+Now goto ``Site_Configuration`` and add a new site.
+Choose ``localhost:18000`` from site dropdown, check Enabled checkbox and save it.
+Then run the command ``make dev.restart-devserver.lms``.
+
+Transifex Translations
+----------------------
+
+Add transifex configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create a new file in ``edx-platform`` root, name it ``.transifexrc`` and add the following credentials in it.
+
+.. code:: sh
+
+     [https://www.transifex.com]
+     api_hostname = https://api.transifex.com
+     hostname = https://www.transifex.com
+     password = api_token
+     username = api
+
+**NOTE:** username should be ``api`` as we are using transifex api to push and pull strings.
+
+Then we have pull latest strings (e.g. Arabic) from tranisfex by the following command.
+
+.. code:: sh
+
+    tx pull -l ar
+
+
+Add new strings to the project and push them to the transifex
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After changing files or development, goto ``lms-shell``, then have to run the following command.
+
+.. code:: sh
+
+    make extract_translations
+
+**NOTE:** This command will automatically extract strings from changed files, put them in multiple file sagments (i.e. django-partial.po, mako.po and so on) and put them to the source language folder (i.e. conf/locale/en).
+
+Merge these new strings files to our target translation language (e.g. Arabic) folder (i.e. conf/locale/ar) by the following command.
+
+.. code:: sh
+
+    msgmerge conf/locale/ar/LC_MESSAGES/django-partial.po conf/locale/en/LC_MESSAGES/django-partial.po --update && msgmerge conf/locale/ar/LC_MESSAGES/django-partial.po conf/locale/en/LC_MESSAGES/django-partial.po --update && msgmerge conf/locale/ar/LC_MESSAGES/django-studio.po conf/locale/en/LC_MESSAGES/django-studio.po --update && msgmerge conf/locale/ar/LC_MESSAGES/djangojs-partial.po conf/locale/en/LC_MESSAGES/djangojs-partial.po --update && msgmerge conf/locale/ar/LC_MESSAGES/djangojs-studio.po conf/locale/en/LC_MESSAGES/djangojs-studio.po --update && msgmerge conf/locale/ar/LC_MESSAGES/mako.po conf/locale/en/LC_MESSAGES/mako.po --update && msgmerge conf/locale/ar/LC_MESSAGES/mako-studio.po conf/locale/en/LC_MESSAGES/mako-studio.po --update && msgmerge conf/locale/ar/LC_MESSAGES/underscore.po conf/locale/en/LC_MESSAGES/underscore.po --update && msgmerge conf/locale/ar/LC_MESSAGES/underscore-studio.po conf/locale/en/LC_MESSAGES/underscore-studio.po --update && msgmerge conf/locale/ar/LC_MESSAGES/wiki.po conf/locale/en/LC_MESSAGES/wiki.po --update
+
+Generate ``i18n`` files by the following command.
+
+.. code:: sh
+
+     paver i18n_fastgenerate
+
+**NOTE:** If You facing any errors in above ``i18n_fastgenerate`` command. Then run ``django-admin.py compilemessages --locale=ar`` and resolve the errors manually and again run above command.
+
+Generate ``i18n`` static js file `lms/static/js/i18n/ar/djangojs.js` by the following command.
+
+.. code:: sh
+
+    ./manage.py lms --settings=devstack_docker compilejsi18n
+    ./manage.py cms --settings=devstack_docker compilejsi18n
+
+Push the new string to the transifex by the following command.
+
+.. code:: sh
+
+   tx push -s -t
+
+
 Service List
 ------------
 
@@ -470,7 +548,7 @@ How do I run multiple named Open edX releases on same machine?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can have multiple isolated Devstacks provisioned on a single computer now. Follow these directions to switch between the named releases.
 
-#. Bring down any running containers by issuing a `make dev.stop`. 
+#. Bring down any running containers by issuing a `make dev.stop`.
 #. The ``COMPOSE_PROJECT_NAME`` variable is used to define Docker namespaced volumes and network based on this value, so changing it will give you a separate set of databases. This is handled for you automatically by setting the ``OPENEDX_RELEASE`` environment variable in ``options.mk`` (e.g. ``COMPOSE_PROJECT_NAME=devstack-juniper.master``. Should you want to manually override this edit the ``options.local.mk`` in the root of this repo and create the file if it does not exist. Change the devstack project name by adding the following line:
    ``COMPOSE_PROJECT_NAME=<your-alternate-devstack-name>`` (e.g. ``COMPOSE_PROJECT_NAME=secondarydevstack``)
 #. Perform steps in `How do I run the images for a named Open edX release?`_ for specific release.
@@ -485,15 +563,15 @@ Switch between your Devstack releases by doing the following:
 
 #. Bring down the containers by issuing a ``make dev.stop`` for the running release.
 #. Follow the instructions from the `How do I run multiple named Open edX releases on same machine?`_ section.
-#. Edit the project name in ``options.local.mk`` or set the ``OPENEDX_RELEASE`` environment variable and let the ``COMPOSE_PROJECT_NAME`` be assigned automatically. 
+#. Edit the project name in ``options.local.mk`` or set the ``OPENEDX_RELEASE`` environment variable and let the ``COMPOSE_PROJECT_NAME`` be assigned automatically.
 #. Bring up the containers with ``make dev.up``.
 
 **NOTE:** Additional instructions on switching releases using `direnv` can be found in `How do I switch releases using 'direnv'?`_ section.
 
 Examples of Docker Service Names After Setting the ``COMPOSE_PROJECT_NAME`` variable. Notice that the **devstack-juniper.master** name represents the ``COMPOSE_PROJECT_NAME``.
-         
--  edx.devstack-juniper.master.lms          
--  edx.devstack-juniper.master.mysql  
+
+-  edx.devstack-juniper.master.lms
+-  edx.devstack-juniper.master.mysql
 
 Each instance has an isolated set of databases. This could, for example, be used to quickly switch between versions of Open edX without hitting as many issues with migrations, data integrity, etc.
 
@@ -505,11 +583,11 @@ Questions & Troubleshooting – Multiple Named Open edX Releases on Same Machine
 This broke my existing Devstack!
 ********************************
  See if the troubleshooting of this readme can help resolve your broken devstack first, then try posting on the `Open edX forums <https://discuss.openedx.org>`__ to see if you have the same issue as any others. If you think you have found a bug, file a CR ticket.
-        
+
 I’m getting errors related to ports already being used.
 *******************************************************
 Make sure you bring down your devstack before changing the value of COMPOSE_PROJECT_NAME. If you forgot to, change the COMPOSE_PROJECT_NAME back to its original value, run ``make dev.down``, and then try again.
-        
+
 I have custom scripts/compose files that integrate with or extend Devstack. Will those still work?
 **************************************************************************************************
 With the default value of COMPOSE_PROJECT_NAME = devstack, they should still work. If you choose a different COMPOSE_PROJECT_NAME, your extensions will likely break, because the names of containers change along with the project name.
@@ -525,7 +603,7 @@ Make sure that you have setup each Open edX release in separate directories usin
 
         # You should see something like the following after successfully enabling 'direnv' for the Juniper release.
 
-        direnv: loading ~/open-edx/devstack.juniper/.envrc   
+        direnv: loading ~/open-edx/devstack.juniper/.envrc
         direnv: export +DEVSTACK_WORKSPACE +OPENEDX_RELEASE +VIRTUAL_ENV ~PATH
         (venv)username@computer-name devstack.juniper %
 
@@ -569,7 +647,7 @@ We recommend separating the named releases into different directories, for clari
         ## ~/.zshrc for ZSH shell for Mac OS X.
 
         ## Hook in `direnv` for local directory environment setup.
-        ## https://direnv.net/docs/hook.html 
+        ## https://direnv.net/docs/hook.html
         eval "$(direnv hook zsh)"
 
         # https://github.com/direnv/direnv/wiki/Python#zsh
@@ -618,7 +696,7 @@ We recommend separating the named releases into different directories, for clari
             export PATH
         }
 
-#. Example `.envrc` file used in project directory. Need to make sure that each release root has this unique file. 
+#. Example `.envrc` file used in project directory. Need to make sure that each release root has this unique file.
 
     .. code:: sh
 
