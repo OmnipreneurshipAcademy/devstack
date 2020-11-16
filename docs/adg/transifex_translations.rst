@@ -3,17 +3,12 @@ Transifex Translations
 
 Add transifex configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a new file in ``edx-platform`` root, name it ``.transifexrc`` and add the following credentials in it.
+Fist of all, run the following command in order to set transifex token,
 
 .. code:: sh
 
-     [https://www.transifex.com]
-     api_hostname = https://api.transifex.com
-     hostname = https://www.transifex.com
-     password = api_token
-     username = api
+     export TX_TOKEN=api_token
 
-**NOTE:** username should be ``api`` as we are using transifex api to push and pull strings.
 
 Then we have pull latest strings (e.g. Arabic) from tranisfex by the following command.
 

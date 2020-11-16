@@ -1370,7 +1370,7 @@ it's good to bring down containers before changing any settings.
 .. _edxops Docker image: https://hub.docker.com/r/edxops/
 .. _Docker Hub: https://hub.docker.com/
 .. _Pycharm Integration documentation: docs/pycharm_integration.rst
-.. _Transifex translations documentation: docs/transifex_translations.rst
+.. _Transifex translations documentation: docs/adg/transifex_translations.rst
 .. _Getting Started on Analytics: docs/analytics.rst
 .. _devpi documentation: docs/devpi.rst
 .. _edx-platform testing documentation: https://github.com/edx/edx-platform/blob/master/docs/guides/testing/testing.rst#running-python-unit-tests
