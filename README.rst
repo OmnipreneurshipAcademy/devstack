@@ -43,6 +43,7 @@ Table of Contents
 * `Using the Latest Images`_
 * `Getting Started`_
 * `Usernames and Passwords`_
+* `Enable ADG theme`_
 * `Service List`_
 * `Useful Commands`_
 * `Troubleshooting: General Tips`_
@@ -288,6 +289,20 @@ is ``edx``.
    * - ``honor@example.com``
      - A student account that you can use to access the LMS for testing honor
        code certificates.
+
+Enable ADG theme
+----------------
+First of all, clone adg theme to ``edx-platform/themes`` folder.
+Open django admin, go to ``site-theme`` and add the following credentials and save it.
+
+.. code:: sh
+
+    site: localhost:18000
+    Theme dir name: adg
+
+Now goto ``Site_Configuration`` and add a new site.
+Choose ``localhost:18000`` from site dropdown, check Enabled checkbox and save it.
+Then run the command ``make dev.restart-devserver.lms``.
 
 Service List
 ------------
@@ -899,6 +914,11 @@ How do I integrate with PyCharm?
 
 See the `Pycharm Integration documentation`_.
 
+How do I use transifex for translations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See the `Transifex translations documentation`_.
+
 What is DevPI and how does it affect Devstack?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1364,3 +1384,4 @@ it's good to bring down containers before changing any settings.
 .. _Marketing site instructions: https://openedx.atlassian.net/wiki/spaces/ENG/pages/159162183/Marketing+Site
 .. _updating relational database dumps: docs/database-dumps.rst
 .. _building images for devstack: docs/building-images.rst
+.. _Transifex translations documentation: docs/adg/transifex_translations.rst
