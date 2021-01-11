@@ -29,7 +29,6 @@ repos=(
     "https://github.com/edx/edx-notes-api.git"
     "https://github.com/OmnipreneurshipAcademy/edx-platform.git"
     "https://github.com/edx/xqueue.git"
-    "https://github.com/edx/edx-analytics-pipeline.git"
     "https://github.com/edx/frontend-app-gradebook.git"
     "https://github.com/edx/frontend-app-publisher.git"
 )
@@ -51,7 +50,6 @@ ssh_repos=(
     "git@github.com:edx/edx-notes-api.git"
     "git@github.com:OmnipreneurshipAcademy/edx-platform.git"
     "git@github.com:edx/xqueue.git"
-    "git@github.com:edx/edx-analytics-pipeline.git"
     "git@github.com:edx/frontend-app-gradebook.git"
     "git@github.com:edx/frontend-app-publisher.git"
 )
@@ -129,9 +127,9 @@ _clone ()
             cd ..
         else
             if [ "${SHALLOW_CLONE}" == "1" ]; then
-                git clone --single-branch -b ${OPENEDX_GIT_BRANCH} -c core.symlinks=true --depth=1 "${repo}"
+                git clone -b ${OPENEDX_GIT_BRANCH} -c core.symlinks=true --depth=1 "${repo}"
             else
-                git clone --single-branch -b ${OPENEDX_GIT_BRANCH} -c core.symlinks=true "${repo}"
+                git clone -b ${OPENEDX_GIT_BRANCH} -c core.symlinks=true "${repo}"
             fi
         fi
     done
@@ -168,19 +166,21 @@ clone_private ()
 
 reset ()
 {
-    currDir=$(pwd)
     for repo in ${repos[*]}
     do
         [[ $repo =~ $name_pattern ]]
         name="${BASH_REMATCH[1]}"
 
         if [ -d "$name" ]; then
-            cd "$name";git reset --hard HEAD;git checkout master;git reset --hard origin/master;git pull;cd "$currDir"
+            (cd "$name"; git checkout -q master && git pull -q --ff-only) || {
+                echo >&2 "Failed to reset $name repo. Exiting."
+                echo >&2 "Please go to the repo and clean up any issues that are keeping 'git checkout master' and 'git pull' from working."
+                exit 1
+            }
         else
             printf "The [%s] repo is not cloned. Continuing.\n" "$name"
         fi
     done
-    cd - &> /dev/null
 }
 
 status ()

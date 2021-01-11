@@ -74,7 +74,7 @@ credentials+discovery+ecommerce+edx_notes_api+forum+frontend-app-publisher+front
 # Separated by plus signs.
 # Separated by plus signs. Listed in alphabetical order for clarity.
 EDX_SERVICES ?= \
-analyticspipeline+course-authoring+credentials+discovery+ecommerce+edx_notes_api+forum+frontend-app-learning+frontend-app-library-authoring+frontend-app-publisher+gradebook+lms+lms_watcher+marketing+program-console+registrar+registrar-worker+studio+studio_watcher+xqueue+xqueue_consumer
+course-authoring+credentials+discovery+ecommerce+edx_notes_api+forum+frontend-app-learning+frontend-app-library-authoring+frontend-app-publisher+gradebook+lms+lms_watcher+marketing+program-console+registrar+registrar-worker+studio+studio_watcher+xqueue+xqueue_consumer
 
 # Services with database migrations.
 # Should be a subset of $(EDX_SERVICES).
@@ -97,4 +97,4 @@ credentials+discovery+ecommerce+lms+registrar+studio
 # All third-party services.
 # Separated by plus signs. Listed in alphabetical order for clarity.
 THIRD_PARTY_SERVICES ?= \
-chrome+devpi+elasticsearch+elasticsearch-5+firefox+memcached+mongo+mysql+mysql57+redis+namenode+datanode+resourcemanager+nodemanager+sparkmaster+sparkworker+vertica
+chrome+devpi+elasticsearch+elasticsearch7+firefox+memcached+mongo+mysql+mysql57+redis+namenode+datanode+resourcemanager+nodemanager+sparkmaster+sparkworker+vertica

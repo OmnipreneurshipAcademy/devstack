@@ -41,7 +41,7 @@
 
 # All devstack targets are "PHONY" in that they do not name actual files.
 # Thus, all non-parameterized targets should be added to this declaration.
-.PHONY: analytics-pipeline-devstack-test build-courses clean-marketing-sync \
+.PHONY: build-courses clean-marketing-sync \
         create-test-course dev.attach dev.backup dev.cache-programs dev.check \
         dev.check-memory dev.checkout dev.clone dev.clone.https dev.clone.ssh \
         dev.dbshell dev.destroy dev.down dev.drop-db dev.kill dev.logs \
@@ -49,7 +49,7 @@
         devpi-password dev.provision dev.ps dev.pull dev.pull.without-deps \
         dev.reset dev.reset-repos dev.restart-container dev.restart-devserver \
         dev.restart-devserver.forum dev.restore dev.rm-stopped dev.shell \
-        dev.shell.analyticspipeline dev.shell.credentials dev.shell.discovery \
+        dev.shell.credentials dev.shell.discovery \
         dev.shell.ecommerce dev.shell.lms dev.shell.lms_watcher \
         dev.shell.marketing dev.shell.registrar dev.shell.studio \
         dev.shell.studio_watcher dev.shell.xqueue dev.shell.xqueue_consumer \
@@ -58,7 +58,7 @@
         dev.sync.requirements dev.sync.up dev.up dev.up.attach dev.up.shell \
         dev.up.without-deps dev.up.without-deps.shell dev.up.with-programs \
         dev.up.with-watchers dev.validate e2e-tests e2e-tests.with-shell \
-        feature-toggle-state help requirements selfcheck upgrade upgrade \
+        help requirements selfcheck upgrade upgrade \
         up-marketing-sync validate-lms-volume vnc-passwords
 
 # Load up options (configurable through options.local.mk).
@@ -72,7 +72,7 @@ include options.mk
 # the containers.
 # Some services are only available for certain values of FS_SYNC_STRATEGY.
 # For example, the LMS/Studio asset watchers are only available for local-mounts and nfs,
-# and XQueue and the Analytics Pipeline are only available for local-mounts.
+# and XQueue is only available for local-mounts.
 
 # Files for use with local volume mounting (default).
 ifeq ($(FS_SYNC_STRATEGY),local-mounts)
@@ -80,7 +80,6 @@ COMPOSE_FILE := docker-compose-host.yml
 COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-themes.yml
 COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-watchers.yml
 COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-xqueue.yml
-COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-analytics-pipeline.yml
 COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-marketing-site.yml
 endif
 
@@ -93,8 +92,9 @@ endif
 
 # Files for use with Docker Sync.
 ifeq ($(FS_SYNC_STRATEGY),docker-sync)
-COMPOSE_FILE := docker-compose-sync.yml
-COMPOSE_FILE := docker-sync-marketing-site.yml
+COMPOSE_FILE := docker-compose-host.yml
+COMPOSE_FILE := $(COMPOSE_FILE):docker-compose-sync.yml
+COMPOSE_FILE := $(COMPOSE_FILE):docker-sync-marketing-site.yml
 endif
 
 ifndef COMPOSE_FILE
@@ -224,13 +224,15 @@ dev.provision.%: ## Provision specified services.
 	echo $*
 	$(WINPTY) bash ./provision.sh $*
 
-dev.backup: dev.up.mysql+mongo+elasticsearch ## Write all data volumes to the host.
+dev.backup: dev.up.mysql+mysql57+mongo+elasticsearch ## Write all data volumes to the host.
 	docker run --rm --volumes-from $$(make -s dev.print-container.mysql) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zcvf /backup/mysql.tar.gz /var/lib/mysql
+	docker run --rm --volumes-from $$(make -s dev.print-container.mysql57) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zcvf /backup/mysql57.tar.gz /var/lib/mysql
 	docker runsql --rm --volumes-from $$(make -s dev.print-container.mongo) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zcvf /backup/mongo.tar.gz /data/db
 	docker run --rm --volumes-from $$(make -s dev.print-container.elasticsearch) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zcvf /backup/elasticsearch.tar.gz /usr/share/elasticsearch/data
 
-dev.restore: dev.up.mysql+mongo+elasticsearch ## Restore all data volumes from the host. WILL OVERWRITE ALL EXISTING DATA!
+dev.restore: dev.up.mysql+mysql57+mongo+elasticsearch ## Restore all data volumes from the host. WILL OVERWRITE ALL EXISTING DATA!
 	docker run --rm --volumes-from $$(make -s dev.print-container.mysql) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zxvf /backup/mysql.tar.gz
+	docker run --rm --volumes-from $$(make -s dev.print-container.mysql57) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zxvf /backup/mysql57.tar.gz
 	docker run --rm --volumes-from $$(make -s dev.print-container.mongo) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zxvf /backup/mongo.tar.gz
 	docker run --rm --volumes-from $$(make -s dev.print-container.elasticsearch) -v $$(pwd)/.dev/backups:/backup debian:jessie tar zxvf /backup/elasticsearch.tar.gz
 
@@ -255,8 +257,9 @@ dev.migrate.%: ## Run migrations on a service.
 
 dev.drop-db: _expects-database.dev.drop-db
 
-dev.drop-db.%: ## Irreversably drop the contents of a MySQL database.
+dev.drop-db.%: ## Irreversably drop the contents of a MySQL database in each mysql container.
 	docker-compose exec -T mysql bash -c "mysql --execute=\"DROP DATABASE $*;\""
+	docker-compose exec -T mysql57 bash -c "mysql --execute=\"DROP DATABASE $*;\""
 
 
 ########################################################################################
@@ -392,9 +395,6 @@ dev.shell: _expects-service.dev.shell
 dev.shell.%: ## Run a shell on the specified service's container.
 	docker-compose exec $* /bin/bash
 
-dev.shell.analyticspipeline:
-	docker-compose exec analyticspipeline env TERM=$(TERM) /edx/app/analytics_pipeline/devstack.sh open
-
 dev.shell.credentials:
 	docker-compose exec credentials env TERM=$(TERM) bash -c 'source /edx/app/credentials/credentials_env && cd /edx/app/credentials/credentials && /bin/bash'
 
@@ -433,6 +433,11 @@ dev.dbshell:
 
 dev.dbshell.%: ## Run a SQL shell on the given database.
 	docker-compose exec mysql bash -c "mysql $*"
+
+dev.dbcopy57.%: ## Copy data from old mysql 5.6 container into a new 5.7 db
+	docker-compose exec mysql bash -c "mysqldump $*" > .dev/$*.sql
+	docker-compose exec -T mysql57 bash -c "mysql $*" < .dev/$*.sql
+	rm .dev/$*.sql
 
 # List of Makefile targets to run static asset generation, in the form dev.static.$(service)
 # Services will only have their asset generation added here
@@ -582,7 +587,6 @@ e2e-tests: dev.up.lms+studio ## Run the end-to-end tests against the service con
 
 e2e-tests.with-shell: dev.up.lms+studio ## Start the end-to-end tests container with a shell.
 	docker run -it --network=$(COMPOSE_PROJECT_NAME)_default -v $(DEVSTACK_WORKSPACE)/edx-e2e-tests:/edx-e2e-tests --env-file $(DEVSTACK_WORKSPACE)/edx-e2e-tests/devstack_env edxops/e2e env TERM=$(TERM) bash
-	
 
 validate-lms-volume: ## Validate that changes to the local workspace are reflected in the LMS container.
 	touch $(DEVSTACK_WORKSPACE)/edx-platform/testfile
@@ -595,9 +599,6 @@ vnc-passwords: ## Get the VNC passwords for the Chrome and Firefox Selenium cont
 
 devpi-password: ## Get the root devpi password for the devpi container.
 	docker-compose exec devpi bash -c "cat /data/server/.serverpassword"
-
-analytics-pipeline-devstack-test: ## Run analytics pipeline tests in travis build.
-	docker-compose exec -u hadoop -T analyticspipeline bash -c 'sudo chown -R hadoop:hadoop /edx/app/analytics_pipeline && source /edx/app/hadoop/.bashrc && make develop-local && make docker-test-acceptance-local ONLY_TESTS=edx.analytics.tasks.tests.acceptance.test_internal_reporting_database && make docker-test-acceptance-local ONLY_TESTS=edx.analytics.tasks.tests.acceptance.test_user_activity'
 
 hadoop-application-logs-%: ## View hadoop logs by application Id.
 	docker-compose exec nodemanager yarn logs -applicationId $*
@@ -612,9 +613,6 @@ build-courses: ## Build course and provision studio, ecommerce, and marketing wi
 	$(WINPTY) bash ./course-generator/build-course-json.sh course-generator/tmp-config.json
 	$(WINPTY) bash ./course-generator/create-courses.sh --studio --ecommerce --marketing course-generator/tmp-config.json
 	rm course-generator/tmp-config.json
-
-feature-toggle-state: ## Gather the state of feature toggles configured for various IDAs.
-	$(WINPTY) bash ./gather-feature-toggle-state.sh
 
 up-marketing-sync: ## Bring up all services (including the marketing site) with docker-sync.
 	docker-sync-stack start -c docker-sync-marketing-site.yml
