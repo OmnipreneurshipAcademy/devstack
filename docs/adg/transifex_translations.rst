@@ -19,7 +19,7 @@ Then we have pull latest strings (e.g. Arabic) from tranisfex by the following c
 
 Add new strings to the project and push them to the transifex
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-After changing files or development, goto ``lms-shell``, then have to run the following command.
+After changing files or development, go to ``lms-shell``, then run the following command:
 
 .. code:: sh
 
