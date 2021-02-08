@@ -25,7 +25,7 @@ After changing files or development, goto ``lms-shell``, then have to run the fo
 
     make extract_translations
 
-**NOTE:** This command will automatically extract strings from changed files, put them in multiple file sagments (i.e. django-partial.po, mako.po and so on) and put them to the source language folder (i.e. conf/locale/en).
+**NOTE:** This command will automatically extract strings from changed files, put them in multiple file segments (i.e. django-partial.po, mako.po and so on) and put them to the source language folder (i.e. conf/locale/en).
 
 Merge these new strings files to our target translation language (e.g. Arabic) folder (i.e. conf/locale/ar) by the following command.
 
